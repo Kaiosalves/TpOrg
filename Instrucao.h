@@ -1,3 +1,5 @@
+#ifndef INSTRUCAO_H
+#define INSTRUCAO_H
 
 typedef struct{
     int add1;
@@ -6,3 +8,8 @@ typedef struct{
     int opcode;
 
 }Instrucao;
+
+
+#endif
+
+

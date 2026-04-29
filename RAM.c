@@ -1,12 +1,13 @@
+#include "RAM.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
 
-typedef struct 
+struct RAM
 {
 int tamanho;
 int *memoria
-}Ram;
+};
 
 //cria Ram base
 void criarRam (Ram *r, int tamanho){
@@ -38,7 +39,7 @@ int getDado(Ram *r, int endereco){
     return r->memoria[endereco];
 }
 //imprimir conteudo da Ram
-void Imprimir(Ram* r){
+void ImprimirConteudoRam(Ram* r){
     printf("Conteudo da RAM\n");
         for(int i = 0; i < r->tamanho; i++){
             printf("%d,", r->memoria[i]);
