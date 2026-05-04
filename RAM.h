@@ -3,6 +3,7 @@
 
 typedef struct RAM Ram;
 
+Ram* alocarEstruturaRam();
 //cria Ram base
 void criarRam (Ram *r, int tamanho);
 

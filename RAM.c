@@ -6,9 +6,13 @@
 struct RAM
 {
 int tamanho;
-int *memoria
+int *memoria;
 };
 
+//estrutura base de ram
+Ram* alocarEstruturaRam() {
+    return (Ram*) malloc(sizeof(struct RAM));
+}
 //cria Ram base
 void criarRam (Ram *r, int tamanho){
     r->tamanho = tamanho;
