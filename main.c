@@ -101,7 +101,7 @@ void programaMult(Ram *ram, CPU *cpu, int multiplicando, int multiplicador){
 }
 
 void programaDiv(Ram *ram, CPU *cpu, int dividendo, int divisor){
-   
+
 //cria ram com 4 posicoes
     criarRamVazia(ram, 4);
 //dividendo == registrador 1
@@ -259,4 +259,52 @@ void programaSomaMatriz(Ram *ram, CPU *cpu, int card) {
         }
     }
 
+}
+void FibProgram(Ram *ram, CPU *cpu, int n){
+    criarRamVazia(ram, 3);
+    setDado(ram, 0, 0);
+    setDado(ram, 1, 1);
+
+    if(n == 0){
+        printf("Fibo = %d\n", getDado(ram, 0));
+        return;
+    }
+
+    if(n == 1){
+        printf("Fibo = %d\n", getDado(ram, 1));
+        return;
+    }
+
+    Instrucao soma[2];
+    soma[0].opcode = 0;
+    soma[0].add1 = 0;
+    soma[0].add2 = 1;
+    soma[0].add3 = 2;
+    soma[1].opcode = -1;
+
+
+    int temp1, temp2;
+    for(int i = 2; i <= n; i++){
+        setPrograma(cpu, soma);
+        iniciarCPU(cpu, ram);
+
+        temp1 = getDado(ram, 1);
+        temp2 = getDado(ram, 2);
+        
+
+        setDado(ram, 0, temp1);
+        setDado(ram, 1, temp2);
+
+
+    }
+    printf("fibo = %d\n", getDado(ram, 1));
+}
+void expProgram(CPU *cpu,Ram *ram, int base, int exp){
+    int res = 1;
+    for(int i = 0; i < exp; i++){
+        //resultado *= base; 
+        programaMult(ram, cpu, res, base);
+        res = getRegistrador1(cpu);
+    }
+    printf("%d^%d = %d\n", base, exp, res);
 }

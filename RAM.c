@@ -11,20 +11,20 @@ int *memoria;
 
 //estrutura base de ram
 Ram* alocarEstruturaRam() {
-    return (Ram*) malloc(sizeof(struct RAM));
+    return (Ram*)malloc(sizeof(struct RAM));
 }
 //cria Ram base
 void criarRam (Ram *r, int tamanho){
     r->tamanho = tamanho;
-    r->memoria = (int*) malloc(tamanho * sizeof(int));
+    r->memoria = (int*)malloc(tamanho * sizeof(int));
 }
 //cria ram preenchida com 0
 void criarRamVazia (Ram *r, int tamanho){
     r->tamanho = tamanho;
-    r->memoria = (int*) calloc(tamanho, sizeof(int));
+    r->memoria = (int*)calloc(tamanho, sizeof(int));
 }
 //cria ram e preenche com numeros aleatorios
-void criarRamAleat  (Ram *r, int tamanho){
+void criarRamAleat(Ram *r, int tamanho){
     criarRam(r, tamanho);
     srand(time(NULL));
     for(int i = 0; i < tamanho; i++){
