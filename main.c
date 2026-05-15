@@ -308,3 +308,14 @@ void expProgram(CPU *cpu,Ram *ram, int base, int exp){
     }
     printf("%d^%d = %d\n", base, exp, res);
 }
+void lognProgram(CPU *cpu, Ram *ram, int n){
+    int cont = 0;
+    int res = n;
+    while(res > 1){
+        programaDiv(ram, cpu, res, 2);
+        
+        res = getRegistrador1(cpu);
+        cont++;
+    }
+    printf("log2(%d) = %d\n", n, cont);
+}
