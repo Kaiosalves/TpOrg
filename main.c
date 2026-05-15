@@ -12,6 +12,9 @@ void programaMult(Ram *ram, CPU *cpu, int multiplicando, int multiplicador);
 void programaDiv(Ram *ram, CPU *cpu, int dividendo, int divisor);
 void programaFat(Ram *ram, CPU *cpu, int fat);
 void programaSomaMatriz(Ram *ram, CPU *cpu, int card);
+void programaFib(Ram *ram, CPU *cpu, int n);
+void programaExp(CPU *cpu,Ram *ram, int base, int exp);
+void programaCifra(Ram *ram, CPU *cpu, int chave, int tam, char *msg);
 
 int main(){
 //seed aleatoria
@@ -23,12 +26,15 @@ int main(){
 
 //programas que podem ser executados(tirar o comentario para executar)
 
-    // programaAleatorio(ram, cpu, 2000);
-    // programaMult(ram, cpu, 15, 10);
-    // programaDiv(ram, cpu, 175, 4);
-    // programaFat(ram, cpu, 3);
-    // programaSomaMatriz(ram, cpu, 3);
-
+    //programaAleatorio(ram, cpu, 2000);
+    //programaMult(ram, cpu, 15, 10);
+    //programaDiv(ram, cpu, 175, 4);
+    //programaFat(ram, cpu, 3);
+    //programaSomaMatriz(ram, cpu, 3);
+    //programaFib(ram, cpu, 8);
+    //programaExp(cpu, ram, 8, 3);
+    //char msg[] = "ZION";
+    //programaCifra(ram, cpu, 3, 5, msg);
     printf("programa terminou!\n");
 
 //desligar a maquina
@@ -260,7 +266,7 @@ void programaSomaMatriz(Ram *ram, CPU *cpu, int card) {
     }
 
 }
-void FibProgram(Ram *ram, CPU *cpu, int n){
+void programaFib(Ram *ram, CPU *cpu, int n){
     criarRamVazia(ram, 3);
     setDado(ram, 0, 0);
     setDado(ram, 1, 1);
@@ -299,7 +305,7 @@ void FibProgram(Ram *ram, CPU *cpu, int n){
     }
     printf("fibo = %d\n", getDado(ram, 1));
 }
-void expProgram(CPU *cpu,Ram *ram, int base, int exp){
+void programaExp(CPU *cpu,Ram *ram, int base, int exp){
     int res = 1;
     for(int i = 0; i < exp; i++){
         //resultado *= base; 
@@ -307,4 +313,58 @@ void expProgram(CPU *cpu,Ram *ram, int base, int exp){
         res = getRegistrador1(cpu);
     }
     printf("%d^%d = %d\n", base, exp, res);
+}
+
+void programaCifra(Ram *ram, CPU *cpu, int chave, int tam, char *msg){
+    criarRamVazia(ram, tam + 1); // uma pra cada letra + 1 pra chave
+
+//trecho 1: passar chave de criptografia para Ram[0]
+    setRegistrador1 (cpu, chave);
+    Instrucao trechoChave[2];
+    trechoChave[0].opcode = 2; trechoChave[0].add1 = 1; trechoChave[0].add2 = 0;
+    trechoChave[1].opcode = -1;
+    setPrograma(cpu, trechoChave);
+    iniciarCPU(cpu,ram);
+
+//trecho 2: passa mensagem para a Ram
+    for(int i = 0; i <tam; i++){
+        setRegistrador1(cpu, msg[i]);
+        
+        Instrucao trechoMsg[2];
+        trechoMsg[0].opcode = 2; trechoMsg[0].add1 = 1; trechoMsg[0].add2 = i +1;
+        trechoMsg[1].opcode = -1;
+
+        setPrograma(cpu, trechoMsg);
+        iniciarCPU(cpu, ram);
+    }
+    printf("Mensagem encriptada pela CPU:\n");
+    char mensagemFinal[tam + 1];
+// trecho 3: Soma da RAM[i] + RAM[0] e subscreve em RAM[i]
+    for(int i = 0; i <tam; i++){
+        int pos = i + 1;
+        
+        Instrucao trechoEnc[2];
+        trechoEnc[0].opcode = 0; trechoEnc[0].add1 = pos; trechoEnc[0].add2 = 0; trechoEnc[0].add3 = pos;
+        trechoEnc[1].opcode = -1;
+
+        setPrograma(cpu, trechoEnc);
+        iniciarCPU(cpu, ram);
+
+//trecho 4: passar da Ram para o Registrador
+
+        Instrucao trechoReg [2];
+        trechoReg[0].opcode = 3; trechoReg[0].add1 = 1; trechoReg[0].add2 = pos; trechoReg[0].add3 = -1;
+        trechoReg[1].opcode = -1;
+
+        setPrograma(cpu, trechoReg);
+        iniciarCPU(cpu, ram);
+
+// converter denovo para char e imprimir
+
+        int encriptado = getRegistrador1(cpu);
+        mensagemFinal[i] = (char)encriptado;
+    }
+    mensagemFinal[tam] = '\0'; 
+    printf("Mensagem encriptada pela CPU: %s\n\n", mensagemFinal);
+    printf("\n");
 }
