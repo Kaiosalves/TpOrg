@@ -15,7 +15,8 @@ void programaSomaMatriz(Ram *ram, CPU *cpu, int card);
 void programaFib(Ram *ram, CPU *cpu, int n);
 void programaExp(CPU *cpu,Ram *ram, int base, int exp);
 void programaCifra(Ram *ram, CPU *cpu, int chave, int tam, char *msg);
-
+void normaVetor(CPU *cpu, Ram *ram, int *vetor, int tamVetor);
+void ProgramaLog2(CPU *cpu, Ram *ram, int n);
 int main(){
 //seed aleatoria
     srand(time(NULL));
@@ -314,7 +315,7 @@ void programaExp(CPU *cpu,Ram *ram, int base, int exp){
     }
     printf("%d^%d = %d\n", base, exp, res);
 }
-void lognProgram(CPU *cpu, Ram *ram, int n){
+void ProgramaLog2(CPU *cpu, Ram *ram, int n){
     int cont = 0;
     int res = n;
     while(res > 1){
