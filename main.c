@@ -314,7 +314,6 @@ void programaExp(CPU *cpu,Ram *ram, int base, int exp){
     }
     printf("%d^%d = %d\n", base, exp, res);
 }
-<<<<<<< HEAD
 void lognProgram(CPU *cpu, Ram *ram, int n){
     int cont = 0;
     int res = n;
@@ -325,7 +324,6 @@ void lognProgram(CPU *cpu, Ram *ram, int n){
         cont++;
     }
     printf("log2(%d) = %d\n", n, cont);
-=======
 
 void programaCifra(Ram *ram, CPU *cpu, int chave, int tam, char *msg){
     criarRamVazia(ram, tam + 1); // uma pra cada letra + 1 pra chave
@@ -356,7 +354,10 @@ void programaCifra(Ram *ram, CPU *cpu, int chave, int tam, char *msg){
         int pos = i + 1;
         
         Instrucao trechoEnc[2];
-        trechoEnc[0].opcode = 0; trechoEnc[0].add1 = pos; trechoEnc[0].add2 = 0; trechoEnc[0].add3 = pos;
+        trechoEnc[0].opcode = 0; 
+        trechoEnc[0].add1 = pos; 
+        trechoEnc[0].add2 = 0; 
+        trechoEnc[0].add3 = pos;
         trechoEnc[1].opcode = -1;
 
         setPrograma(cpu, trechoEnc);
@@ -379,5 +380,101 @@ void programaCifra(Ram *ram, CPU *cpu, int chave, int tam, char *msg){
     mensagemFinal[tam] = '\0'; 
     printf("Mensagem encriptada pela CPU: %s\n\n", mensagemFinal);
     printf("\n");
->>>>>>> f0db3ba0d0e1d48ed47a5ced2e972da9f334348a
+}
+void normaVetor(CPU *cpu, Ram *ram, int *vetor, int tamVetor){
+    criarRamVazia(ram, tamVetor+4);
+    
+    setRegistrador1(cpu, 0);//valor inicial da soma
+    Instrucao trechoSet0[2];
+    trechoSet0[0].opcode = 2;
+    trechoSet0[0].add1 = 1;
+    trechoSet0[0].add2 = 0;
+    trechoSet0[1].opcode = -1;
+    setPrograma(cpu, trechoSet0);
+    iniciarCPU(cpu, ram);
+    
+    //Essa parte só copia o vetor para as posições de 2, 3... a n;
+    for(int i = 0; i < tamVetor; i++){
+        setRegistrador1(cpu, vetor[i]);
+
+        Instrucao trechoCopia[2];
+        trechoCopia[0].opcode = 2;
+        trechoCopia[0].add1 = 1;
+        trechoCopia[0].add2 = i+2;
+        trechoCopia[1].opcode = -1;//parada
+
+        setPrograma(cpu, trechoCopia);
+        iniciarCPU(cpu, ram);
+    }
+    
+    for(int i = 0; i < tamVetor; i++){
+        //Quadrado do termo armazenado em reg1 
+        int valorTermo = getDado(ram,i+2);
+        if(valorTermo == 0)
+            continue;
+
+        for(int j = 0; j < valorTermo; j++){
+            Instrucao trechoSomaQuadrado[2];
+            trechoSomaQuadrado[0].opcode = 0;   //soma
+            trechoSomaQuadrado[0].add1 = 0;     //lugar para fazer o somatório
+            trechoSomaQuadrado[0].add2 = i+2;   //posicão atual do vetor p somar
+            trechoSomaQuadrado[0].add3 = 0;     // Resultado da soma
+            trechoSomaQuadrado[1].opcode = -1;  // parada
+
+            setPrograma(cpu, trechoSomaQuadrado);
+            iniciarCPU(cpu, ram);
+        }
+        
+        
+    }
+    //TEOREMA DE NICÔMACO
+    int posResRaiz = tamVetor +1;
+    int posConst1 = tamVetor +3;
+    int posConst2 = tamVetor +2;
+    setDado(ram, 1, 1);         // primeiro número impar
+    setDado(ram, posConst1, 1); //Constante 1
+    setDado(ram, posConst2, 2); //constante 2
+
+    //enquanto o resultado do quadrado for maior que o impar atual
+    while(getDado(ram, 0) >= getDado(ram, 1)){
+        Instrucao trechoRaiz[4];
+
+        // Essa parte subtrai o impar atual no resultado da soma dos quadrados
+        trechoRaiz[0].opcode = 1; // subtrai
+        trechoRaiz[0].add1 = 0;
+        trechoRaiz[0].add2 = 1;
+        trechoRaiz[0].add3 = 0;
+
+        // Essa parte incrementa o contador em +1
+        trechoRaiz[1].opcode = 0; //soma
+        //Valor para ser incrementado no contador
+        trechoRaiz[1].add1 = posConst1; 
+        trechoRaiz[1].add2 = posResRaiz; //posição do contador
+        trechoRaiz[1].add3 = posResRaiz;
+
+        //Soma 2 na posição 1 da ram para pular para o proximo impar
+        trechoRaiz[2].opcode = 0;//soma
+        trechoRaiz[2].add1 = 1;
+        trechoRaiz[2].add2 = posConst2;
+        trechoRaiz[2].add3 = 1;
+
+        trechoRaiz[3].opcode = -1;//parada do programa
+        
+        setPrograma(cpu, trechoRaiz);
+        iniciarCPU(cpu, ram);
+    }
+
+    Instrucao trechoMove[2];
+    trechoMove[0].opcode = 3; // mover da ram para o registrador
+    trechoMove[0].add1 = 1;
+    trechoMove[0].add2 = posResRaiz;
+
+    trechoMove[1].opcode = -1;//halt
+
+    setPrograma(cpu, trechoMove);
+    iniciarCPU(cpu, ram);
+
+
+    printf("\nResultado da norma aproximada de V: %d\n", getRegistrador1(cpu));
+    // O CÁLCULO DA RAIZ SE BASEIA EM SUBTRAIR O RESULTADO DO QUADRADO PELO PROXIMO INTEIRO IMPAR E CONTAR A QUANTIDADE DE SUBTRAÇÕES, O NÚMERO TOTAL SERÁ O RESULTADO APROXIMADO DA RAIZ!!! SÓ TE DA A RAIZ EXATA QUANDO O NÚMERO TEM UM RAIZ EXATA
 }
