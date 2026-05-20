@@ -310,13 +310,55 @@ void programaFib(Ram *ram, CPU *cpu, int n){
     printf("fibo = %d\n", getDado(ram, 1));
 }
 void programaExp(CPU *cpu,Ram *ram, int base, int exp){
-    int res = 1;
-    for(int i = 0; i < exp; i++){
-        //resultado *= base; 
-        programaMult(ram, cpu, res, base);
-        res = getRegistrador1(cpu);
+    if (exp == 0) {
+        printf("%d^%d = 1\n", base, exp);
+        return;
     }
-    printf("%d^%d = %d\n", base, exp, res);
+    setRegistrador1(cpu, base);
+    
+// Criamos uma estrutura de RAM temporária para a exponenciacao guardar o acumulado
+
+    criarRam(ram, 1); 
+//copia do reg 1 para ram [0]
+    Instrucao trechoSalva[2];
+    trechoSalva[0].opcode = 2; 
+    trechoSalva[0].add1 = 1;   
+    trechoSalva[0].add2 = 0;   
+    trechoSalva[1].opcode = -1;
+    setPrograma(cpu, trechoSalva);
+    iniciarCPU(cpu, ram);
+//faz os tramites da multiplicacao "guardando o resultado"
+    for(int i = 0; i < exp - 1; i++){
+        Instrucao trechoLeitura[2];
+        trechoLeitura[0].opcode = 3; 
+        trechoLeitura[0].add1 = 1;   
+        trechoLeitura[0].add2 = 0;  
+        trechoLeitura[1].opcode = -1;
+        setPrograma(cpu, trechoLeitura);
+        iniciarCPU(cpu, ram);
+        
+        int acumuladoAtual = getRegistrador1(cpu);
+
+//multiplica deixando o resultado no reg1
+        programaMult(ram, cpu, acumuladoAtual, base);
+
+        int resultadoMultiplicacao = getRegistrador1(cpu);
+
+        criarRam(ram, 1); 
+        setRegistrador1(cpu, resultadoMultiplicacao);
+        setPrograma(cpu, trechoSalva);
+        iniciarCPU(cpu, ram);
+    }
+
+//passa da Ram[0] para o reg1
+    Instrucao trechoFinal[2];
+    trechoFinal[0].opcode = 3; 
+    trechoFinal[0].add1 = 1;  
+    trechoFinal[1].opcode = -1;
+    setPrograma(cpu, trechoFinal);
+    iniciarCPU(cpu, ram);
+
+    printf("\n%d^%d = %d \n", base, exp, getRegistrador1(cpu));
 }
 void ProgramaLog2(CPU *cpu, Ram *ram, int n){
     int cont = 0;
@@ -328,7 +370,7 @@ void ProgramaLog2(CPU *cpu, Ram *ram, int n){
         cont++;
     }
     printf("log2(%d) = %d\n", n, cont);
-
+}
 void programaCifra(Ram *ram, CPU *cpu, int chave, int tam, char *msg){
     criarRamVazia(ram, tam + 1); // uma pra cada letra + 1 pra chave
 
