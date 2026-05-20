@@ -17,6 +17,8 @@ void programaExp(CPU *cpu,Ram *ram, int base, int exp);
 void programaCifra(Ram *ram, CPU *cpu, int chave, int tam, char *msg);
 void normaVetor(CPU *cpu, Ram *ram, int *vetor, int tamVetor);
 void ProgramaLog2(CPU *cpu, Ram *ram, int n);
+void programaTrocar(Ram *ram, CPU *cpu, int posA, int posB, int posTemp);
+void programaBubbleSort(Ram *ram, CPU *cpu, int tamVetor);
 int main(){
 //seed aleatoria
     srand(time(NULL));
@@ -36,6 +38,7 @@ int main(){
     //programaExp(cpu, ram, 8, 3);
     //char msg[] = "ZION";
     //programaCifra(ram, cpu, 3, 5, msg);
+    //programaBubbleSort(ram, cpu, 5);
     printf("programa terminou!\n");
 
 //desligar a maquina
@@ -478,4 +481,112 @@ void normaVetor(CPU *cpu, Ram *ram, int *vetor, int tamVetor){
 
     printf("\nResultado da norma aproximada de V: %d\n", getRegistrador1(cpu));
     // O CÁLCULO DA RAIZ SE BASEIA EM SUBTRAIR O RESULTADO DO QUADRADO PELO PROXIMO INTEIRO IMPAR E CONTAR A QUANTIDADE DE SUBTRAÇÕES, O NÚMERO TOTAL SERÁ O RESULTADO APROXIMADO DA RAIZ!!! SÓ TE DA A RAIZ EXATA QUANDO O NÚMERO TEM UM RAIZ EXATA
+}
+
+void programaTrocar(Ram *ram, CPU *cpu, int posA, int posB, int posTemp){
+    // passo 1: temp = A
+    Instrucao trecho1[2]; // copia ram[posA] para o registrador 1
+    trecho1[0].opcode = 3; trecho1[0].add1 = 1; trecho1[0].add2 = posA;
+    trecho1[1].opcode = -1;
+    setPrograma(cpu, trecho1);
+    iniciarCPU(cpu, ram);
+
+    Instrucao trecho2[2]; // copia registrador 1 para ram[posTemp]
+    trecho2[0].opcode = 2; trecho2[0].add1 = 1; trecho2[0].add2 = posTemp;
+    trecho2[1].opcode = -1;
+    setPrograma(cpu, trecho2);
+    iniciarCPU(cpu, ram);
+
+    // passo 2: A = B
+    Instrucao trecho3[2]; // copia ram[posB] para o registrador 1
+    trecho3[0].opcode = 3; trecho3[0].add1 = 1; trecho3[0].add2 = posB;
+    trecho3[1].opcode = -1;
+    setPrograma(cpu, trecho3);
+    iniciarCPU(cpu, ram);
+
+    Instrucao trecho4[2]; // copia registrador 1 para ram[posA]
+    trecho4[0].opcode = 2; trecho4[0].add1 = 1; trecho4[0].add2 = posA;
+    trecho4[1].opcode = -1;
+    setPrograma(cpu, trecho4);
+    iniciarCPU(cpu, ram);
+
+    // passo 3: B = temp
+    Instrucao trecho5[2]; // copia ram[posTemp] para o registrador 1
+    trecho5[0].opcode = 3; trecho5[0].add1 = 1; trecho5[0].add2 = posTemp;
+    trecho5[1].opcode = -1;
+    setPrograma(cpu, trecho5);
+    iniciarCPU(cpu, ram);
+
+    Instrucao trecho6[2]; // copia registrador 1 para ram[posB]
+    trecho6[0].opcode = 2; trecho6[0].add1 = 1; trecho6[0].add2 = posB;
+    trecho6[1].opcode = -1;
+    setPrograma(cpu, trecho6);
+    iniciarCPU(cpu, ram);
+}
+
+void programaBubbleSort(Ram *ram, CPU *cpu, int tamVetor){
+    int *vetor = (int*) malloc(tamVetor * sizeof(int));
+    
+    // preenche o vetor com números aleatórios entre 0 e 99
+    for(int i = 0; i < tamVetor; i++){
+        vetor[i] = rand() % 100;
+    }
+
+    // imprime o vetor antes
+    printf("Vetor antes do bubble sort:\n");
+    for(int i = 0; i < tamVetor; i++){
+        printf("%d ", vetor[i]);
+    }
+    printf("\n");
+
+    // cria RAM com espaço para o vetor + 2 posições auxiliares
+    // posição tamVetor = resultado da comparação
+    // posição tamVetor + 1 = temp para a troca
+    criarRamVazia(ram, tamVetor + 2);
+    int posTemp = tamVetor + 1;
+
+    // copia o vetor para a RAM
+    for(int i = 0; i < tamVetor; i++){
+        setRegistrador1(cpu, vetor[i]);
+
+        Instrucao trechoCopia[2];
+        trechoCopia[0].opcode = 2; trechoCopia[0].add1 = 1; trechoCopia[0].add2 = i;
+        trechoCopia[1].opcode = -1;
+
+        setPrograma(cpu, trechoCopia);
+        iniciarCPU(cpu, ram);
+    }
+
+    // bubble sort do maior para o menor
+    for(int i = 0; i < tamVetor - 1; i++){
+        for(int j = 0; j < tamVetor - 1 - i; j++){
+
+            Instrucao trechoComp[2];
+            trechoComp[0].opcode = 1; trechoComp[0].add1 = j; trechoComp[0].add2 = j + 1; trechoComp[0].add3 = tamVetor;
+            trechoComp[1].opcode = -1;
+
+            setPrograma(cpu, trechoComp);
+            iniciarCPU(cpu, ram);
+
+            int resultado = getRegistrador1(cpu);
+            if(resultado < 0){
+                programaTrocar(ram, cpu, j, j+1, posTemp);
+            }
+        }
+    }
+
+    // imprime o vetor depois
+    printf("Vetor depois do bubble sort:\n");
+    for(int i = 0; i < tamVetor; i++){
+        Instrucao trechoLer[2];
+        trechoLer[0].opcode = 3; trechoLer[0].add1 = 1; trechoLer[0].add2 = i;
+        trechoLer[1].opcode = -1;
+
+        setPrograma(cpu, trechoLer);
+        iniciarCPU(cpu, ram);
+
+        printf("%d ", getRegistrador1(cpu));
+    }
+    printf("\n");
+    free(vetor);
 }
