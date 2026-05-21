@@ -17,6 +17,9 @@ void programaExp(CPU *cpu,Ram *ram, int base, int exp);
 void programaCifra(Ram *ram, CPU *cpu, int chave, int tam, char *msg);
 void normaVetor(CPU *cpu, Ram *ram, int *vetor, int tamVetor);
 void ProgramaLog2(CPU *cpu, Ram *ram, int n);
+void programaTrocar(Ram *ram, CPU *cpu, int posA, int posB, int posTemp);
+void programaBubbleSort(Ram *ram, CPU *cpu, int tamVetor);
+void programaMDC(Ram *ram, CPU *cpu, int a, int b);
 int main(){
 //seed aleatoria
     srand(time(NULL));
@@ -36,6 +39,8 @@ int main(){
     //programaExp(cpu, ram, 8, 3);
     //char msg[] = "ZION";
     //programaCifra(ram, cpu, 3, 5, msg);
+    //programaBubbleSort(ram, cpu, 5);
+    //programaMDC(ram, cpu, 12, 8)
     printf("programa terminou!\n");
 
 //desligar a maquina
@@ -267,65 +272,57 @@ void programaSomaMatriz(Ram *ram, CPU *cpu, int card) {
     }
 
 }
-void programaFib(Ram *ram, CPU *cpu, int n){
-    criarRamVazia(ram, 3);
-    setDado(ram, 0, 0);
-    setDado(ram, 1, 1);
-
-    if(n == 0){
-        printf("Fibo = %d\n", getDado(ram, 0));
-        return;
-    }
-
-    if(n == 1){
-        printf("Fibo = %d\n", getDado(ram, 1));
-        return;
-    }
-
-    Instrucao soma[2];
-    soma[0].opcode = 0;
-    soma[0].add1 = 0;
-    soma[0].add2 = 1;
-    soma[0].add3 = 2;
-    soma[1].opcode = -1;
-
-
-    int temp1, temp2;
-    for(int i = 2; i <= n; i++){
-        setPrograma(cpu, soma);
-        iniciarCPU(cpu, ram);
-
-        temp1 = getDado(ram, 1);
-        temp2 = getDado(ram, 2);
-        
-
-        setDado(ram, 0, temp1);
-        setDado(ram, 1, temp2);
-
-
-    }
-    printf("fibo = %d\n", getDado(ram, 1));
-}
 void programaExp(CPU *cpu,Ram *ram, int base, int exp){
-    int res = 1;
-    for(int i = 0; i < exp; i++){
-        //resultado *= base; 
-        programaMult(ram, cpu, res, base);
-        res = getRegistrador1(cpu);
+    if (exp == 0) {
+        printf("%d^%d = 1\n", base, exp);
+        return;
     }
-    printf("%d^%d = %d\n", base, exp, res);
-}
-void ProgramaLog2(CPU *cpu, Ram *ram, int n){
-    int cont = 0;
-    int res = n;
-    while(res > 1){
-        programaDiv(ram, cpu, res, 2);
-        
-        res = getRegistrador1(cpu);
-        cont++;
-    }
-    printf("log2(%d) = %d\n", n, cont);
+    setRegistrador1(cpu, base);
+    
+// Criamos uma estrutura de RAM temporária para a exponenciacao guardar o acumulado
 
+    criarRam(ram, 1); 
+//copia do reg 1 para ram [0]
+    Instrucao trechoSalva[2];
+    trechoSalva[0].opcode = 2; 
+    trechoSalva[0].add1 = 1;   
+    trechoSalva[0].add2 = 0;   
+    trechoSalva[1].opcode = -1;
+    setPrograma(cpu, trechoSalva);
+    iniciarCPU(cpu, ram);
+//faz os tramites da multiplicacao "guardando o resultado"
+    for(int i = 0; i < exp - 1; i++){
+        Instrucao trechoLeitura[2];
+        trechoLeitura[0].opcode = 3; 
+        trechoLeitura[0].add1 = 1;   
+        trechoLeitura[0].add2 = 0;  
+        trechoLeitura[1].opcode = -1;
+        setPrograma(cpu, trechoLeitura);
+        iniciarCPU(cpu, ram);
+        
+        int acumuladoAtual = getRegistrador1(cpu);
+
+//multiplica deixando o resultado no reg1
+        programaMult(ram, cpu, acumuladoAtual, base);
+
+        int resultadoMultiplicacao = getRegistrador1(cpu);
+
+        criarRam(ram, 1); 
+        setRegistrador1(cpu, resultadoMultiplicacao);
+        setPrograma(cpu, trechoSalva);
+        iniciarCPU(cpu, ram);
+    }
+
+//passa da Ram[0] para o reg1
+    Instrucao trechoFinal[2];
+    trechoFinal[0].opcode = 3; 
+    trechoFinal[0].add1 = 1;  
+    trechoFinal[1].opcode = -1;
+    setPrograma(cpu, trechoFinal);
+    iniciarCPU(cpu, ram);
+
+    printf("\n%d^%d = %d \n", base, exp, getRegistrador1(cpu));
+}
 void programaCifra(Ram *ram, CPU *cpu, int chave, int tam, char *msg){
     criarRamVazia(ram, tam + 1); // uma pra cada letra + 1 pra chave
 
@@ -478,4 +475,168 @@ void normaVetor(CPU *cpu, Ram *ram, int *vetor, int tamVetor){
 
     printf("\nResultado da norma aproximada de V: %d\n", getRegistrador1(cpu));
     // O CÁLCULO DA RAIZ SE BASEIA EM SUBTRAIR O RESULTADO DO QUADRADO PELO PROXIMO INTEIRO IMPAR E CONTAR A QUANTIDADE DE SUBTRAÇÕES, O NÚMERO TOTAL SERÁ O RESULTADO APROXIMADO DA RAIZ!!! SÓ TE DA A RAIZ EXATA QUANDO O NÚMERO TEM UM RAIZ EXATA
+}
+
+void programaTrocar(Ram *ram, CPU *cpu, int posA, int posB, int posTemp){
+    // passo 1: temp = A
+    Instrucao trecho1[2]; // copia ram[posA] para o registrador 1
+    trecho1[0].opcode = 3; trecho1[0].add1 = 1; trecho1[0].add2 = posA;
+    trecho1[1].opcode = -1;
+    setPrograma(cpu, trecho1);
+    iniciarCPU(cpu, ram);
+
+    Instrucao trecho2[2]; // copia registrador 1 para ram[posTemp]
+    trecho2[0].opcode = 2; trecho2[0].add1 = 1; trecho2[0].add2 = posTemp;
+    trecho2[1].opcode = -1;
+    setPrograma(cpu, trecho2);
+    iniciarCPU(cpu, ram);
+
+    // passo 2: A = B
+    Instrucao trecho3[2]; // copia ram[posB] para o registrador 1
+    trecho3[0].opcode = 3; trecho3[0].add1 = 1; trecho3[0].add2 = posB;
+    trecho3[1].opcode = -1;
+    setPrograma(cpu, trecho3);
+    iniciarCPU(cpu, ram);
+
+    Instrucao trecho4[2]; // copia registrador 1 para ram[posA]
+    trecho4[0].opcode = 2; trecho4[0].add1 = 1; trecho4[0].add2 = posA;
+    trecho4[1].opcode = -1;
+    setPrograma(cpu, trecho4);
+    iniciarCPU(cpu, ram);
+
+    // passo 3: B = temp
+    Instrucao trecho5[2]; // copia ram[posTemp] para o registrador 1
+    trecho5[0].opcode = 3; trecho5[0].add1 = 1; trecho5[0].add2 = posTemp;
+    trecho5[1].opcode = -1;
+    setPrograma(cpu, trecho5);
+    iniciarCPU(cpu, ram);
+
+    Instrucao trecho6[2]; // copia registrador 1 para ram[posB]
+    trecho6[0].opcode = 2; trecho6[0].add1 = 1; trecho6[0].add2 = posB;
+    trecho6[1].opcode = -1;
+    setPrograma(cpu, trecho6);
+    iniciarCPU(cpu, ram);
+}
+
+void programaBubbleSort(Ram *ram, CPU *cpu, int tamVetor){
+    int *vetor = (int*) malloc(tamVetor * sizeof(int));
+    
+    // preenche o vetor com números aleatórios entre 0 e 99
+    for(int i = 0; i < tamVetor; i++){
+        vetor[i] = rand() % 100;
+    }
+
+    // imprime o vetor antes
+    printf("Vetor antes do bubble sort:\n");
+    for(int i = 0; i < tamVetor; i++){
+        printf("%d ", vetor[i]);
+    }
+    printf("\n");
+
+    // cria RAM com espaço para o vetor + 2 posições auxiliares
+    // posição tamVetor = resultado da comparação
+    // posição tamVetor + 1 = temp para a troca
+    criarRamVazia(ram, tamVetor + 2);
+    int posTemp = tamVetor + 1;
+
+    // copia o vetor para a RAM
+    for(int i = 0; i < tamVetor; i++){
+        setRegistrador1(cpu, vetor[i]);
+
+        Instrucao trechoCopia[2];
+        trechoCopia[0].opcode = 2; trechoCopia[0].add1 = 1; trechoCopia[0].add2 = i;
+        trechoCopia[1].opcode = -1;
+
+        setPrograma(cpu, trechoCopia);
+        iniciarCPU(cpu, ram);
+    }
+
+    // bubble sort do maior para o menor
+    for(int i = 0; i < tamVetor - 1; i++){
+        for(int j = 0; j < tamVetor - 1 - i; j++){
+
+            Instrucao trechoComp[2];
+            trechoComp[0].opcode = 1; trechoComp[0].add1 = j; trechoComp[0].add2 = j + 1; trechoComp[0].add3 = tamVetor;
+            trechoComp[1].opcode = -1;
+
+            setPrograma(cpu, trechoComp);
+            iniciarCPU(cpu, ram);
+
+            int resultado = getRegistrador1(cpu);
+            if(resultado < 0){
+                programaTrocar(ram, cpu, j, j+1, posTemp);
+            }
+        }
+    }
+
+    // imprime o vetor depois
+    printf("Vetor depois do bubble sort:\n");
+    for(int i = 0; i < tamVetor; i++){
+        Instrucao trechoLer[2];
+        trechoLer[0].opcode = 3; trechoLer[0].add1 = 1; trechoLer[0].add2 = i;
+        trechoLer[1].opcode = -1;
+
+        setPrograma(cpu, trechoLer);
+        iniciarCPU(cpu, ram);
+
+        printf("%d ", getRegistrador1(cpu));
+    }
+    printf("\n");
+    free(vetor);
+}
+
+void programaMDC(Ram *ram, CPU *cpu, int a, int b){
+    // cria RAM com 3 posições
+    // RAM[0] = a
+    // RAM[1] = b
+    // RAM[2] = não utilizada (reserva)
+    criarRamVazia(ram, 3);
+
+    // copia a para RAM[0]
+    setRegistrador1(cpu, a);
+    Instrucao trechoA[2];
+    trechoA[0].opcode = 2; trechoA[0].add1 = 1; trechoA[0].add2 = 0;
+    trechoA[1].opcode = -1;
+    setPrograma(cpu, trechoA);
+    iniciarCPU(cpu, ram);
+
+    // copia b para RAM[1]
+    setRegistrador1(cpu, b);
+    Instrucao trechoB[2];
+    trechoB[0].opcode = 2; trechoB[0].add1 = 1; trechoB[0].add2 = 1;
+    trechoB[1].opcode = -1;
+    setPrograma(cpu, trechoB);
+    iniciarCPU(cpu, ram);
+
+    // algoritmo de euclides
+    // enquanto a e b forem diferentes, subtrai o menor do maior
+    while(getDado(ram, 0) != getDado(ram, 1)){
+
+        // se a > b, subtrai b de a e salva em RAM[0]
+        if(getDado(ram, 0) > getDado(ram, 1)){
+            Instrucao trechoSub[2];
+            trechoSub[0].opcode = 1; trechoSub[0].add1 = 0; trechoSub[0].add2 = 1; trechoSub[0].add3 = 0;
+            trechoSub[1].opcode = -1;
+            setPrograma(cpu, trechoSub);
+            iniciarCPU(cpu, ram);
+
+        // se b > a, subtrai a de b e salva em RAM[1]
+        } else {
+            Instrucao trechoSub[2];
+            trechoSub[0].opcode = 1; trechoSub[0].add1 = 1; trechoSub[0].add2 = 0; trechoSub[0].add3 = 1;
+            trechoSub[1].opcode = -1;
+            setPrograma(cpu, trechoSub);
+            iniciarCPU(cpu, ram);
+        }
+    }
+
+    // quando RAM[0] == RAM[1] o MDC foi encontrado
+    // copia o resultado de RAM[0] para o registrador 1
+    Instrucao trechoRes[2];
+    trechoRes[0].opcode = 3; trechoRes[0].add1 = 1; trechoRes[0].add2 = 0;
+    trechoRes[1].opcode = -1;
+    setPrograma(cpu, trechoRes);
+    iniciarCPU(cpu, ram);
+
+    printf("MDC(%d, %d) = %d\n", a, b, getRegistrador1(cpu));
 }
