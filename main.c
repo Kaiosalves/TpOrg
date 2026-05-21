@@ -417,7 +417,7 @@ void normaVetor(CPU *cpu, Ram *ram, int *vetor, int tamVetor){
         for(int j = 0; j < valorTermo; j++){
             Instrucao trechoSomaQuadrado[2];
             trechoSomaQuadrado[0].opcode = 0;   //soma
-            trechoSomaQuadrado[0].add1 = 0;     //lugar para fazer o somatório
+            trechoSomaQuadrado[0].add1 = 0;     //valor anterior para somar
             trechoSomaQuadrado[0].add2 = i+2;   //posicão atual do vetor p somar
             trechoSomaQuadrado[0].add3 = 0;     // Resultado da soma
             trechoSomaQuadrado[1].opcode = -1;  // parada
