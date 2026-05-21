@@ -12,11 +12,9 @@ void programaMult(Ram *ram, CPU *cpu, int multiplicando, int multiplicador);
 void programaDiv(Ram *ram, CPU *cpu, int dividendo, int divisor);
 void programaFat(Ram *ram, CPU *cpu, int fat);
 void programaSomaMatriz(Ram *ram, CPU *cpu, int card);
-void programaFib(Ram *ram, CPU *cpu, int n);
 void programaExp(CPU *cpu,Ram *ram, int base, int exp);
 void programaCifra(Ram *ram, CPU *cpu, int chave, int tam, char *msg);
 void normaVetor(CPU *cpu, Ram *ram, int *vetor, int tamVetor);
-void ProgramaLog2(CPU *cpu, Ram *ram, int n);
 void programaTrocar(Ram *ram, CPU *cpu, int posA, int posB, int posTemp);
 void programaBubbleSort(Ram *ram, CPU *cpu, int tamVetor);
 int main(){
