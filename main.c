@@ -17,6 +17,7 @@ void programaCifra(Ram *ram, CPU *cpu, int chave, int tam, char *msg);
 void normaVetor(CPU *cpu, Ram *ram, int *vetor, int tamVetor);
 void programaTrocar(Ram *ram, CPU *cpu, int posA, int posB, int posTemp);
 void programaBubbleSort(Ram *ram, CPU *cpu, int tamVetor);
+void programaMDC(Ram *ram, CPU *cpu, int a, int b);
 int main(){
 //seed aleatoria
     srand(time(NULL));
@@ -37,6 +38,7 @@ int main(){
     //char msg[] = "ZION";
     //programaCifra(ram, cpu, 3, 5, msg);
     //programaBubbleSort(ram, cpu, 5);
+    //programaMDC(ram, cpu, 12, 8)
     printf("programa terminou!\n");
 
 //desligar a maquina
@@ -579,4 +581,60 @@ void programaBubbleSort(Ram *ram, CPU *cpu, int tamVetor){
     }
     printf("\n");
     free(vetor);
+}
+
+void programaMDC(Ram *ram, CPU *cpu, int a, int b){
+    // cria RAM com 3 posições
+    // RAM[0] = a
+    // RAM[1] = b
+    // RAM[2] = não utilizada (reserva)
+    criarRamVazia(ram, 3);
+
+    // copia a para RAM[0]
+    setRegistrador1(cpu, a);
+    Instrucao trechoA[2];
+    trechoA[0].opcode = 2; trechoA[0].add1 = 1; trechoA[0].add2 = 0;
+    trechoA[1].opcode = -1;
+    setPrograma(cpu, trechoA);
+    iniciarCPU(cpu, ram);
+
+    // copia b para RAM[1]
+    setRegistrador1(cpu, b);
+    Instrucao trechoB[2];
+    trechoB[0].opcode = 2; trechoB[0].add1 = 1; trechoB[0].add2 = 1;
+    trechoB[1].opcode = -1;
+    setPrograma(cpu, trechoB);
+    iniciarCPU(cpu, ram);
+
+    // algoritmo de euclides
+    // enquanto a e b forem diferentes, subtrai o menor do maior
+    while(getDado(ram, 0) != getDado(ram, 1)){
+
+        // se a > b, subtrai b de a e salva em RAM[0]
+        if(getDado(ram, 0) > getDado(ram, 1)){
+            Instrucao trechoSub[2];
+            trechoSub[0].opcode = 1; trechoSub[0].add1 = 0; trechoSub[0].add2 = 1; trechoSub[0].add3 = 0;
+            trechoSub[1].opcode = -1;
+            setPrograma(cpu, trechoSub);
+            iniciarCPU(cpu, ram);
+
+        // se b > a, subtrai a de b e salva em RAM[1]
+        } else {
+            Instrucao trechoSub[2];
+            trechoSub[0].opcode = 1; trechoSub[0].add1 = 1; trechoSub[0].add2 = 0; trechoSub[0].add3 = 1;
+            trechoSub[1].opcode = -1;
+            setPrograma(cpu, trechoSub);
+            iniciarCPU(cpu, ram);
+        }
+    }
+
+    // quando RAM[0] == RAM[1] o MDC foi encontrado
+    // copia o resultado de RAM[0] para o registrador 1
+    Instrucao trechoRes[2];
+    trechoRes[0].opcode = 3; trechoRes[0].add1 = 1; trechoRes[0].add2 = 0;
+    trechoRes[1].opcode = -1;
+    setPrograma(cpu, trechoRes);
+    iniciarCPU(cpu, ram);
+
+    printf("MDC(%d, %d) = %d\n", a, b, getRegistrador1(cpu));
 }
