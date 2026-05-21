@@ -33,12 +33,11 @@ int main(){
     //programaDiv(ram, cpu, 175, 4);
     //programaFat(ram, cpu, 3);
     //programaSomaMatriz(ram, cpu, 3);
-    //programaFib(ram, cpu, 8);
     //programaExp(cpu, ram, 8, 3);
     //char msg[] = "ZION";
     //programaCifra(ram, cpu, 3, 5, msg);
     //programaBubbleSort(ram, cpu, 5);
-    //programaMDC(ram, cpu, 12, 8)
+    //programaMDC(ram, cpu, 12, 8);
     printf("programa terminou!\n");
 
 //desligar a maquina
