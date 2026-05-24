@@ -34,7 +34,7 @@ int main(){
     //programaFat(ram, cpu, 3);
     //programaSomaMatriz(ram, cpu, 3);
     //programaExp(cpu, ram, 8, 3);
-    //char msg[] = "ZION";
+    //char msg[] = "ola";
     //programaCifra(ram, cpu, 3, 5, msg);
     //programaBubbleSort(ram, cpu, 5);
     //programaMDC(ram, cpu, 12, 8);
@@ -233,7 +233,7 @@ void programaSomaMatriz(Ram *ram, CPU *cpu, int card) {
     for (int i = 0; i < card; i++) {
         for(int j = 0; j < card; j++) {                
             // Copia o valor da matriz 2 para o Registrador 1
-            setRegistrador1(cpu, matriz1[i][j]);
+            setRegistrador1(cpu, matriz2[i][j]);
             
             Instrucao trecho2[2];
             // Copia da CPU para a RAM na posição atual de FimDaLinha
@@ -248,7 +248,7 @@ void programaSomaMatriz(Ram *ram, CPU *cpu, int card) {
     }
 
     fimDaLInha = 0;
-    int deslocamento = card * card;
+    int deslocamento = card * card; //aponta pro inicio da matriz2
     for (int i = 0; i < card; i++) {
         for(int j = 0; j < card; j++) {
             Instrucao trecho3[2];
