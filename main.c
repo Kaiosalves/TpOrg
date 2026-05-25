@@ -12,11 +12,9 @@ void programaMult(Ram *ram, CPU *cpu, int multiplicando, int multiplicador);
 void programaDiv(Ram *ram, CPU *cpu, int dividendo, int divisor);
 void programaFat(Ram *ram, CPU *cpu, int fat);
 void programaSomaMatriz(Ram *ram, CPU *cpu, int card);
-void programaFib(Ram *ram, CPU *cpu, int n);
 void programaExp(CPU *cpu,Ram *ram, int base, int exp);
 void programaCifra(Ram *ram, CPU *cpu, int chave, int tam, char *msg);
 void normaVetor(CPU *cpu, Ram *ram, int *vetor, int tamVetor);
-void ProgramaLog2(CPU *cpu, Ram *ram, int n);
 void programaTrocar(Ram *ram, CPU *cpu, int posA, int posB, int posTemp);
 void programaBubbleSort(Ram *ram, CPU *cpu, int tamVetor);
 void programaMDC(Ram *ram, CPU *cpu, int a, int b);
@@ -35,12 +33,11 @@ int main(){
     //programaDiv(ram, cpu, 175, 4);
     //programaFat(ram, cpu, 3);
     //programaSomaMatriz(ram, cpu, 3);
-    //programaFib(ram, cpu, 8);
     //programaExp(cpu, ram, 8, 3);
-    //char msg[] = "ZION";
+    //char msg[] = "ola";
     //programaCifra(ram, cpu, 3, 5, msg);
     //programaBubbleSort(ram, cpu, 5);
-    //programaMDC(ram, cpu, 12, 8)
+    //programaMDC(ram, cpu, 12, 8);
     printf("programa terminou!\n");
 
 //desligar a maquina
@@ -236,7 +233,7 @@ void programaSomaMatriz(Ram *ram, CPU *cpu, int card) {
     for (int i = 0; i < card; i++) {
         for(int j = 0; j < card; j++) {                
             // Copia o valor da matriz 2 para o Registrador 1
-            setRegistrador1(cpu, matriz1[i][j]);
+            setRegistrador1(cpu, matriz2[i][j]);
             
             Instrucao trecho2[2];
             // Copia da CPU para a RAM na posição atual de FimDaLinha
@@ -251,7 +248,7 @@ void programaSomaMatriz(Ram *ram, CPU *cpu, int card) {
     }
 
     fimDaLInha = 0;
-    int deslocamento = card * card;
+    int deslocamento = card * card; //aponta pro inicio da matriz2
     for (int i = 0; i < card; i++) {
         for(int j = 0; j < card; j++) {
             Instrucao trecho3[2];
