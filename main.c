@@ -22,12 +22,11 @@ int main(){
 //seed aleatoria
     srand(time(NULL));
 
-//Iniciar a Ram e cpu
+    //Iniciar a Ram e cpu
     CPU *cpu = alocaCPU();
     Ram *ram = alocarEstruturaRam();
-
-//programas que podem ser executados(tirar o comentario para executar)
-
+    
+    //programas que podem ser executados(tirar o comentario para executar)
     //programaAleatorio(ram, cpu, 2000);
     //programaMult(ram, cpu, 15, 10);
     //programaDiv(ram, cpu, 175, 4);
@@ -36,8 +35,11 @@ int main(){
     //programaExp(cpu, ram, 8, 3);
     //char msg[] = "ola";
     //programaCifra(ram, cpu, 3, 5, msg);
+    int v[3] = {6,7,5};
+    normaVetor(cpu, ram, v, 3);
     //programaBubbleSort(ram, cpu, 5);
     //programaMDC(ram, cpu, 12, 8);
+    
     printf("programa terminou!\n");
 
 //desligar a maquina
@@ -429,7 +431,7 @@ void normaVetor(CPU *cpu, Ram *ram, int *vetor, int tamVetor){
     setDado(ram, 1, 1);         // primeiro número impar
     setDado(ram, posConst1, 1); //Constante 1
     setDado(ram, posConst2, 2); //constante 2
-
+    setDado(ram, posResRaiz, 0);
     //enquanto o resultado do quadrado for maior que o impar atual
     while(getDado(ram, 0) >= getDado(ram, 1)){
         Instrucao trechoRaiz[4];
