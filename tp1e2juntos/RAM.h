@@ -1,5 +1,6 @@
 #ifndef RAM_H
 #define RAM_H
+#include "BlocoMemoria.h"
 
 typedef struct RAM Ram;
 
@@ -20,6 +21,10 @@ void liberarRam(Ram *r);
 int setDado(Ram *r, int endereco, int conteudo);
 
 int getDado(Ram *r, int endereco);
+
+void setBloco(Ram *r, int endereco, BlocoMemoria bloco);
+
+BlocoMemoria getBloco( Ram *r, int endereco);
 
 //imprimir conteudo da Ram
 void imprimirConteudoRam(Ram* r);

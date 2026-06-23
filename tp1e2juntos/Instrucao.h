@@ -1,10 +1,11 @@
 #ifndef INSTRUCAO_H
 #define INSTRUCAO_H
+#include "Endereco.h"
 
 typedef struct{
-    int add1;
-    int add2;
-    int add3;
+    Endereco add1;
+    Endereco add2;
+    Endereco add3;
     int opcode;
 
 }Instrucao;
