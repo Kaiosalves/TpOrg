@@ -33,11 +33,11 @@ int main(){
     //programaFat(ram, cpu, 3);
     //programaSomaMatriz(ram, cpu, 3);
     //programaExp(cpu, ram, 8, 3);
-    //char msg[] = "ola";
-    //programaCifra(ram, cpu, 3, 5, msg);
-    int v[3] = {6,7,5};
-    normaVetor(cpu, ram, v, 3);
-    //programaBubbleSort(ram, cpu, 5);
+    char msg[] = "olaJoubert";
+    programaCifra(ram, cpu, 3, 5, msg);
+    int v[5] = {6,7,5,2,12};
+    normaVetor(cpu, ram, v, 5);
+    programaBubbleSort(ram, cpu, 50);
     //programaMDC(ram, cpu, 12, 8);
     
     printf("programa terminou!\n");
