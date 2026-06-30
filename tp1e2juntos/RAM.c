@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <time.h>
 
-
+//mantive a setdado e get dado aqui so p n dar erro de compilacao
 
 struct RAM{
     int tamanho;
@@ -25,7 +25,6 @@ void criarRam (Ram *r, int tamanho){
         r->memoria[i].atualizado = 0;
         r->memoria[i].custo = 0;
         r->memoria[i].cacheHit = 0;
-        r->memoria[i].frequencia = 0;
 
         for(int j = 0; j < 4; j++)
         {
@@ -55,15 +54,7 @@ void liberarRam(Ram *r){
     free(r->memoria);
 }
 
-
-
 //funcoes de passar e pegar dados
-int setDado(Ram *r, int endereco, int conteudo){
-    return r->memoria[endereco].palavras[0] = conteudo;
-}
-int getDado(Ram *r, int endereco){
-    return r->memoria[endereco].palavras[0];
-}
 
 void setBloco(Ram *r, int endereco, BlocoMemoria bloco){
     r->memoria[endereco] = bloco;

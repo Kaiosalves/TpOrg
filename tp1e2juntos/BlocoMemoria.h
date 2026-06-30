@@ -8,7 +8,7 @@ typedef struct {
     int custo;
     int cacheHit;
 
-    int frequencia;    // para implementar algoritmo LFU de retirada
+    int contador;    // para implementar algoritmo LRU de retirada
 } BlocoMemoria;
 
 #endif

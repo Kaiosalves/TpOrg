@@ -18,10 +18,6 @@ void criarRamAleat  (Ram *r, int tamanho);
 void liberarRam(Ram *r);
 
 //funcoes de passar e pegar dados
-int setDado(Ram *r, int endereco, int conteudo);
-
-int getDado(Ram *r, int endereco);
-
 void setBloco(Ram *r, int endereco, BlocoMemoria bloco);
 
 BlocoMemoria getBloco( Ram *r, int endereco);

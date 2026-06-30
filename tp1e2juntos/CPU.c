@@ -2,24 +2,49 @@
 #include "Instrucao.h"
 #include "RAM.h"
 #include "CPU.h"
+#include "MMU.h"
 #include <stdlib.h>
 #include <stdio.h>
 
 struct CPU{
-    int registrador1;
-    int registrador2;
+    BlocoMemoria* registrador1;
+    BlocoMemoria* registrador2;
+    BlocoMemoria* registrador3;
+
     int PC; // program counter
     int opcode;
     Instrucao *programa;
+
+    int custo;
+    int missc1;
+    int hitc1;
+    int missc2;
+    int hitc2;
+
+    BlocoMemoria *cache1;
+    int tamCache1;
+    BlocoMemoria *cache2;
+    int tamCache2;
 };
 
 CPU* alocaCPU(){
     CPU *cpu = (CPU*) malloc(sizeof(CPU));
-    cpu->registrador1 = 0;
-    cpu->registrador2 = 0;
+    cpu->registrador1 = NULL;
+    cpu->registrador2 = NULL;
+    cpu->registrador3 = NULL;
     cpu->PC = 0;
     cpu->opcode = 0x7FFFFFFF; // maior inteiro em hexadecimal
     cpu->programa = NULL;
+    cpu->custo = 0;
+    cpu->missc1 = 0;
+    cpu->hitc1 = 0;
+    cpu->missc2 = 0;
+    cpu->hitc2 = 0;
+    
+    cpu->cache1 = NULL;
+    cpu->cache2 = NULL;
+    cpu->tamCache1 = 0;
+    cpu->tamCache2 = 0;
     return cpu;
 
 }
@@ -29,23 +54,19 @@ void setPrograma(CPU* cpu, Instrucao* programaAux){
     cpu->programa = programaAux;
 }
 
-//passar e pegar valor dos registradores
-void setRegistrador1(CPU *cpu, int valor) {
-    cpu->registrador1 = valor;
+BlocoMemoria* IniciarCache(int tamanho){
+    BlocoMemoria* umaCache = (BlocoMemoria*) malloc(tamanho * sizeof(BlocoMemoria));
+    for(int i = 0; i < tamanho; i++){
+        umaCache[i].endBloco = -1;
+        umaCache[i].atualizado = 0;
+        umaCache[i].custo = 0;
+        umaCache[i].cacheHit = 0;
+        for(int j = 0; j < 4; j++){
+            umaCache[i].palavras[j] = 0;
+        }
+    }
+    return umaCache;
 }
-
-int getRegistrador1(CPU *cpu) {
-    return cpu->registrador1;
-}
-
-void setRegistrador2(CPU *cpu, int valor) {
-    cpu->registrador2 = valor;
-}
-
-int getRegistrador2(CPU *cpu) {
-    return cpu->registrador2;
-}
-
 /**
  * @brief 
  * -1 --> Parada ;
@@ -56,8 +77,12 @@ int getRegistrador2(CPU *cpu) {
  * @param cpu 
  * @param ram 
  */
-void iniciarCPU(CPU* cpu, Ram* ram){
-    cpu->opcode = 0x7FFFFFFF;
+void iniciarCPU(CPU* cpu, Ram* ram, int TamCache1, int Tamcache2){
+    cpu->cache1 = IniciarCache(TamCache1);
+    cpu->tamCache1 = TamCache1;
+    cpu->cache2 = IniciarCache(Tamcache2);
+    cpu->tamCache2 = Tamcache2;
+    cpu->opcode =0;
     cpu->PC = 0;
 
     while (cpu->opcode != -1){
@@ -65,55 +90,132 @@ void iniciarCPU(CPU* cpu, Ram* ram){
         cpu->opcode = inst.opcode;
         
         switch(cpu->opcode){
-            case -1:
+            case -1: // halt
                 break;  
 
-            case 0:
-                cpu->registrador1 = getDado(ram, inst.add1);
-                cpu->registrador2 = getDado(ram, inst.add2);
-                cpu->registrador1 += cpu->registrador2;
-                setDado(ram,inst.add3, cpu->registrador1);
-                printf("Soma: Ram[%d], tem valor %d\n", inst.add3, cpu->registrador1);
-                break;
-
-            case 1: 
-                cpu->registrador1 = getDado(ram, inst.add1);
-                cpu->registrador2 = getDado(ram, inst.add2);
-                cpu->registrador1 -= cpu->registrador2;
-                setDado(ram,inst.add3, cpu->registrador1);
-                printf("Subtracao: Ram[%d], tem valor %d \n", inst.add3, cpu->registrador1);
-                break;
-
-            case 2:
-                if(inst.add1 == 1){
-                    setDado(ram, inst.add2,cpu->registrador1);
-                    printf("Copiado do Registrador para a Ram, na posicao %d de valor: %d\n", inst.add2, cpu->registrador1);
-                }
-                else if(inst.add1 == 2){
-                    setDado(ram, inst.add2,cpu->registrador2);
-                    printf("Copiado do Registrador para a Ram, na posicao %d de valor: %d\n", inst.add2, cpu->registrador2);
-                break;
+            case 0: //op soma - busca nas memorias e tras pra cache 1
+                cpu->registrador1 = buscarNasMemorias(inst.add1, ram, cpu->cache1, cpu->tamCache1, cpu->cache2, cpu->tamCache2);
+                cpu->registrador2 = buscarNasMemorias(inst.add2, ram, cpu->cache1, cpu->tamCache1, cpu->cache2, cpu->tamCache2);
+                cpu->registrador3 = buscarNasMemorias(inst.add3, ram, cpu->cache1, cpu->tamCache1, cpu->cache2, cpu->tamCache2);
+                //contadores de hit e miss
+                //contador do reg1
+                if(cpu->registrador1->cacheHit == 1) cpu->hitc1++;
+                else if (cpu->registrador1->cacheHit == 2) { 
+                    cpu->missc1++; 
+                    cpu->hitc2++; }
+                else if (cpu->registrador1->cacheHit == 3) { 
+                    cpu->missc1++; 
+                    cpu->missc2++; 
                 }
 
-            case 3:
-                if(inst.add1 == 1){
-                    cpu->registrador1 = getDado(ram, inst.add2);
-                    printf("Copiado da Ram para o registrador 1, o valor: %d\n",cpu->registrador1);
+                //contador p reg2
+                if (cpu->registrador2->cacheHit == 1) cpu->hitc1++;
+                else if (cpu->registrador2->cacheHit == 2) { 
+                    cpu->missc1++; 
+                    cpu->hitc2++;
+                }
+                else if (cpu->registrador2->cacheHit == 3) { 
+                    cpu->missc1++; 
+                    cpu->missc2++; 
+                }
+                
+                //contadores p reg3
+                if (cpu->registrador3->cacheHit == 1) cpu->hitc1++;
+                else if (cpu->registrador3->cacheHit == 2) { 
+                    cpu->missc1++; 
+                    cpu->hitc2++; 
+                }
+                else if (cpu->registrador3->cacheHit == 3) { 
+                    cpu->missc1++; 
+                    cpu->missc2++; 
+                }
+                //soma das palavras
+                cpu->registrador3->palavras[inst.add3.endPalavra] = 
+                cpu->registrador1->palavras[inst.add1.endPalavra] + 
+                cpu->registrador2->palavras[inst.add2.endPalavra];
 
-                    }else if (inst.add1 == 2){
-                        cpu->registrador2 = getDado(ram, inst.add2);
-                        printf("Copiado da Ram para o registrador 2, o valor: %d\n",cpu->registrador2);
-                    }
+                //modifica o dado, entao ativa a flag atualizado
+                cpu->registrador3->atualizado = 1;
+
+                //soma os custos acumulados
+                cpu->custo += cpu->registrador1->custo + cpu->registrador2->custo + cpu->registrador3->custo;
+
+                //imprimindo resultados
+                printf("Instucao de soma -> RAM posicao %d com conteudo na cache 1 %d\n", 
+                       inst.add3.endBloco, cpu->registrador3->palavras[inst.add3.endPalavra]);
+                printf("Custo ate o momento: %d\n", cpu->custo);
+                printf("Ate o momento: ... Hit C1: %d Miss C1: %d\n", cpu->hitc1, cpu->missc1);
+                printf("Ate o momento: ... Hit C2: %d Miss C2: %d\n\n", cpu->hitc2, cpu->missc2);
+
                 break;
-            }
-        cpu->PC++;
+
+            case 1: //op subtracao, busca nas memorias e tras pra cache 1
+                cpu->registrador1 = buscarNasMemorias(inst.add1, ram, cpu->cache1, cpu->tamCache1, cpu->cache2, cpu->tamCache2);
+                cpu->registrador2 = buscarNasMemorias(inst.add2, ram, cpu->cache1, cpu->tamCache1, cpu->cache2, cpu->tamCache2);
+                cpu->registrador3 = buscarNasMemorias(inst.add3, ram, cpu->cache1, cpu->tamCache1, cpu->cache2, cpu->tamCache2);
+                //contadores de hit e miss
+                //contador do reg1
+                if(cpu->registrador1->cacheHit == 1) cpu->hitc1++;
+                else if (cpu->registrador1->cacheHit == 2) { 
+                    cpu->missc1++; 
+                    cpu->hitc2++; }
+                else if (cpu->registrador1->cacheHit == 3) { 
+                    cpu->missc1++; 
+                    cpu->missc2++; 
+                }
+
+                //contador p reg2
+                if (cpu->registrador2->cacheHit == 1) cpu->hitc1++;
+                else if (cpu->registrador2->cacheHit == 2) { 
+                    cpu->missc1++; 
+                    cpu->hitc2++;
+                }
+                else if (cpu->registrador2->cacheHit == 3) { 
+                    cpu->missc1++; 
+                    cpu->missc2++; 
+                }
+                
+                //contadores p reg3
+                if (cpu->registrador3->cacheHit == 1) cpu->hitc1++;
+                else if (cpu->registrador3->cacheHit == 2) { 
+                    cpu->missc1++; 
+                    cpu->hitc2++; 
+                }
+                else if (cpu->registrador3->cacheHit == 3) { 
+                    cpu->missc1++; 
+                    cpu->missc2++; 
+                }
+
+                //soma das palavras
+                cpu->registrador3->palavras[inst.add3.endPalavra] = 
+                cpu->registrador1->palavras[inst.add1.endPalavra] - 
+                cpu->registrador2->palavras[inst.add2.endPalavra];
+
+                //modifica o dado, entao ativa a flag atualizado
+                cpu->registrador3->atualizado = 1;
+
+                //soma os custos acumulados
+                cpu->custo += cpu->registrador1->custo + cpu->registrador2->custo + cpu->registrador3->custo;
+
+                //imprimindo resultados
+                printf("Instucao de subtracao -> RAM posicao %d com conteudo na cache 1 %d\n", 
+                       inst.add3.endBloco, cpu->registrador3->palavras[inst.add3.endPalavra]);
+                printf("Custo ate o momento: %d\n", cpu->custo);
+                printf("Ate o momento: ... Hit C1: %d Miss C1: %d\n", cpu->hitc1, cpu->missc1);
+                printf("Ate o momento: ... Hit C2: %d Miss C2: %d\n\n", cpu->hitc2, cpu->missc2);
+
+                break;
         }
-    
+        cpu->PC++;
     }
-
+}
 
 
 //liberar memoria
 void liberaCPU(CPU* cpu){
-    free(cpu);
+    if(cpu!= NULL){
+        if(cpu->cache1 != NULL) free(cpu->cache1);
+        if(cpu->cache2 != NULL) free (cpu->cache2);
+        free(cpu);
+    }
 }
