@@ -142,7 +142,7 @@ void iniciarCPU(CPU* cpu, Ram* ram, int TamCache1, int Tamcache2){
 
                 //imprimindo resultados
                 printf("Instucao de soma -> RAM posicao %d com conteudo na cache 1 %d\n", 
-                       inst.add3.endBloco, cpu->registrador3->palavras[inst.add3.endPalavra]);
+                    inst.add3.endBloco, cpu->registrador3->palavras[inst.add3.endPalavra]);
                 printf("Custo ate o momento: %d\n", cpu->custo);
                 printf("Ate o momento: ... Hit C1: %d Miss C1: %d\n", cpu->hitc1, cpu->missc1);
                 printf("Ate o momento: ... Hit C2: %d Miss C2: %d\n\n", cpu->hitc2, cpu->missc2);
@@ -199,7 +199,7 @@ void iniciarCPU(CPU* cpu, Ram* ram, int TamCache1, int Tamcache2){
 
                 //imprimindo resultados
                 printf("Instucao de subtracao -> RAM posicao %d com conteudo na cache 1 %d\n", 
-                       inst.add3.endBloco, cpu->registrador3->palavras[inst.add3.endPalavra]);
+                    inst.add3.endBloco, cpu->registrador3->palavras[inst.add3.endPalavra]);
                 printf("Custo ate o momento: %d\n", cpu->custo);
                 printf("Ate o momento: ... Hit C1: %d Miss C1: %d\n", cpu->hitc1, cpu->missc1);
                 printf("Ate o momento: ... Hit C2: %d Miss C2: %d\n\n", cpu->hitc2, cpu->missc2);

@@ -14,6 +14,7 @@ public class CPU {
 	//caches 1 e 2 Hit e miss
 	int missC1 = 0;
 	int hitC1 = 0;
+	
 	int missC2 = 0;
 	int hitC2 = 0;
 	
