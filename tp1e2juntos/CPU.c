@@ -2,7 +2,7 @@
 #include "Instrucao.h"
 #include "RAM.h"
 #include "CPU.h"
-#include "MMU.h"
+#include "UCM.h"
 #include <stdlib.h>
 #include <stdio.h>
 
