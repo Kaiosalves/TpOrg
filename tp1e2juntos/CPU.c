@@ -17,6 +17,10 @@ struct CPU{
     UCM *ucm; // unidade de controle de memoria
 };
 
+void setUCM(CPU* cpu, UCM *ucm){
+    cpu->ucm = ucm;
+}
+
 CPU* alocaCPU(){
     CPU *cpu = (CPU*) malloc(sizeof(CPU));
     cpu->registrador1 = NULL;
@@ -44,7 +48,7 @@ void setPrograma(CPU* cpu, Instrucao* programaAux){
  * @param cpu 
  * @param ram 
  */
-void iniciarCPU(CPU* cpu, Ram* ram, int TamCache1, int Tamcache2){
+void iniciarCPU(CPU* cpu){
     if(!cpu->ucm){
         printf("ERRO: UCM NAO ASSOCIADA A CPU\n");
         return;

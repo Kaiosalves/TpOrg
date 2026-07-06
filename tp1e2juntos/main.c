@@ -5,6 +5,7 @@
 #include "CPU.h"
 #include "Instrucao.h"
 #include "UCM.h"
+#include "cache.h"
 
 Instrucao* lerArquivoInstrucoes(char *nomeArquivo, int *qtdInstrucoes);
 

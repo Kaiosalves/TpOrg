@@ -11,7 +11,6 @@ typedef struct {
     Cache *L3;
     Ram *ram;
     int relogio;          // contador global para LRU
-
     // Estatísticas
     int hitsL1, missesL1;
     int hitsL2, missesL2;

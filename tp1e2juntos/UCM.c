@@ -68,41 +68,41 @@ BlocoMemoria* ucm_ler(UCM *ucm, Endereco end){
     int id;
 
 //tenta na l1
-    id = buscarNaCache(&ucm->L1, endBloco);
+    id = buscarNaCache(ucm->L1, endBloco);
     if(id != -1){
         ucm->hitsL1++;
-        atualizarLRU(&ucm->L1,id, &ucm->relogio);
+        atualizarLRU(ucm->L1,id, &ucm->relogio);
         ucm->tempoTotal+=1;
         return &ucm->L1->linhas[id];
     }
     ucm->missesL1++;
 //tenta na l2
-    id = buscarNaCache(&ucm->L2, endBloco);
+    id = buscarNaCache(ucm->L2, endBloco);
     if(id != -1){
         ucm->hitsL2++;
-        atualizarLRU(&ucm->L2,id, &ucm->relogio);
+        atualizarLRU(ucm->L2,id, &ucm->relogio);
         ucm->tempoTotal+=10;
         //sobe para de l2 para l1 - invalidando em l2
-        subirBloco(&ucm->L1, endBloco, &ucm->L2, id, ucm->ram, &ucm->relogio);
+        subirBloco(ucm->L1, endBloco, ucm->L2, id, ucm->ram, &ucm->relogio);
         // busca em l1 e pega o indica
-        int idl1 = buscarNaCache( &ucm->L1, endBloco);
+        int idl1 = buscarNaCache( ucm->L1, endBloco);
         return &ucm->L1->linhas[idl1];
     }
     ucm->missesL2++;
 // tenta na l3
-    id = buscarNaCache(&ucm->L3, endBloco);
+    id = buscarNaCache(ucm->L3, endBloco);
     if(id != -1){
         ucm->hitsL3++;
-        atualizarLRU(&ucm->L3,id, &ucm->relogio);
+        atualizarLRU(ucm->L3,id, &ucm->relogio);
         ucm->tempoTotal+=50;
         //sobe para de l3 para l2 - invalidando em l3
-        subirBloco(&ucm->L2, endBloco, &ucm->L3, id, ucm->ram, &ucm->relogio);
+        subirBloco(ucm->L2, endBloco, ucm->L3, id, ucm->ram, &ucm->relogio);
         // busca em l2 e pega o indice
-        int idl2 = buscarNaCache( &ucm->L2, endBloco);
+        int idl2 = buscarNaCache( ucm->L2, endBloco);
         //sobe para de l2 para l1 - invalidando em l2
-        subirBloco(&ucm->L1, endBloco, &ucm->L2, id, ucm->ram, &ucm->relogio);
+        subirBloco(ucm->L1, endBloco, ucm->L2, id, ucm->ram, &ucm->relogio);
         // busca em l1 e pega o indica
-        int idl1 = buscarNaCache( &ucm->L1, endBloco);
+        int idl1 = buscarNaCache( ucm->L1, endBloco);
         return &ucm->L1->linhas[idl1];
     }
     ucm->missesL3++;
@@ -111,10 +111,10 @@ BlocoMemoria* ucm_ler(UCM *ucm, Endereco end){
     BlocoMemoria blocoRAM = getBloco(ucm->ram, endBloco);
     blocoRAM.atualizado = 0;
 //coloca o bloco diretamente em L1
-    int idl1 = encontrarLRU(&ucm->L1, endBloco);
+    int idl1 = encontrarLRU(ucm->L1, endBloco);
 //se a linha em l1 estiver suja, desce p l2
     if(ucm->L1->linhas[idl1].atualizado && ucm->L1->linhas[idl1].endBloco != -1){
-        descerBloco(&ucm->L1, idl1, &ucm->L2, ucm->ram, &ucm->relogio);
+        descerBloco(ucm->L1, idl1, ucm->L2, ucm->ram, &ucm->relogio);
 // se nao estava sujo, mas estava ocupado, somente esvazia a linha
     } else if(ucm->L1->linhas[idl1].endBloco != -1){
         ucm->L1->linhas[idl1].endBloco = -1;
@@ -145,9 +145,9 @@ void ucm_escrever(UCM *ucm, Endereco end, int valor){
     ucm->missesL1++;
 
 //se nao esta em L1, trazemos o bloco (leitura) depois escrevemos
-    BlocoMemoria *bloco = ucm_ler(ucm, end);
+    BlocoMemoria *bloco_lido = ucm_ler(ucm, end);
     //bloco agora esta em L1, encontramos a linha
-    int idl1 = buscarNaCache(&ucm->L1, bloco);
+    int idl1 = buscarNaCache(ucm->L1, bloco);
     if(idl1 != -1){
         ucm->L1->linhas[idl1].palavras[offset] = valor;
         ucm->L1->linhas[idl1].atualizado = 1;
