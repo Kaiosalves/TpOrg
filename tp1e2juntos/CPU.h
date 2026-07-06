@@ -1,7 +1,8 @@
 #ifndef CPU_H
 #define CPU_H
+
 #include "Instrucao.h"
-#include "RAM.h"
+#include "UCM.h"
 
 
 typedef struct CPU CPU;
@@ -10,9 +11,11 @@ CPU* alocaCPU();
 
 //seta um vetor de instrucoes auxiliares
 void setPrograma(CPU* cpu, Instrucao* programaAux);
-BlocoMemoria* IniciarCache(int tamanho);
+
+void setUCM(CPU* cpu, UCM *ucm);
+
 //inicia a a CPU
-void iniciarCPU(CPU* cpu, Ram* ram, int TamCache1, int Tamcache2);
+void iniciarCPU(CPU* cpu);
 
 //liberar memoria
 void liberaCPU(CPU* cpu);
