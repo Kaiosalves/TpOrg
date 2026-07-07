@@ -156,7 +156,6 @@ void ucm_escrever(UCM *ucm, Endereco end, int valor){
         ucm->L1->linhas[id].atualizado = 1; // marcado como sujo
         return;
     }
-    ucm->missesL1++;
 
 //se nao esta em L1, trazemos o bloco (leitura) depois escrevemos
     BlocoMemoria *bloco_lido = ucm_ler(ucm, end);
