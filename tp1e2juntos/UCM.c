@@ -3,50 +3,51 @@
 #include <stdlib.h>
 
 
-
-
-static void subirBloco(Cache *dest, int endBloco, Cache *origem, int idOrig, Ram* ram, int *relogio){
-//encontra a posicao para substituir no destino
-    int idDest = encontrarLRU(dest, endBloco);
-//escreve na RAM se a linha de destino esta suja
-    if(dest->linhas[idDest].atualizado && dest->linhas[idDest].endBloco != -1){
-        setBloco(ram, dest->linhas[idDest].endBloco, dest->linhas[idDest]);
-    }
-
-//copia o bloco da origem par o destino
-    dest->linhas[idDest] = origem->linhas[idOrig];
-//atualiza contador lru
-    dest->linhas[idDest].contador = (*relogio)++;
-    dest->linhas[idDest].atualizado = 0;
-
-//invalida a linda na origem - pra ter politica de exclusividade
-    origem->linhas[idOrig].endBloco = -1;
-    origem->linhas[idOrig].atualizado = 0;
-    for (int j = 0; j < 4; j++) {
-        origem->linhas[idOrig].palavras[j] = 0;
-    }
-}
-
 // Desce um bloco de um nível superior para o inferior
-static void descerBloco(Cache *superior, int idSuperior, Cache *inferior, Ram *ram, int *relogio) {
-    // Se o bloco no superior esta invlido, retorna
+static void descerBloco(Cache *superior, int idSuperior, Cache *inferior, Cache *proximo, Ram *ram, int *relogio) {
     if (superior->linhas[idSuperior].endBloco == -1) return;
-
-    // Encontra linha para substituir no inferior (LRU)
-    int idInf = encontrarLRU(inferior, superior->linhas[idSuperior].endBloco);
-    // Se a linha no inferior estiver suja, escreve na RAM
-    if (inferior->linhas[idInf].atualizado && inferior->linhas[idInf].endBloco != -1) {
-        setBloco(ram, inferior->linhas[idInf].endBloco, inferior->linhas[idInf]);
+    
+    int endBloco = superior->linhas[idSuperior].endBloco;
+    int idInf = encontrarLRU(inferior, endBloco);
+    
+    // Se a linha no inferior estiver ocupada, desce para o próximo nível
+    if (inferior->linhas[idInf].endBloco != -1) {
+        if (proximo != NULL) {
+            // cascata para o próximo nível
+            descerBloco(inferior, idInf, proximo, NULL, ram, relogio);
+        } else {
+            // Último nível: escreve na RAM se sujo e invalida
+            if (inferior->linhas[idInf].atualizado) {
+                setBloco(ram, inferior->linhas[idInf].endBloco, inferior->linhas[idInf]);
+            }
+            inferior->linhas[idInf].endBloco = -1;
+            inferior->linhas[idInf].atualizado = 0;
+            for (int j = 0; j < 4; j++) inferior->linhas[idInf].palavras[j] = 0;
+        }
     }
-    // Copia o bloco do superior para o inferior
+    
+    // Agora coloca o bloco do superior no inferior
     inferior->linhas[idInf] = superior->linhas[idSuperior];
-    // Atualiza LRU no inferior
     inferior->linhas[idInf].contador = (*relogio)++;
-
-    // Invalida a linha no superior (pois o bloco agora está no inferior)
+    
+    // Invalida o bloco no superior (exclusividade)
     superior->linhas[idSuperior].endBloco = -1;
     superior->linhas[idSuperior].atualizado = 0;
     for (int j = 0; j < 4; j++) superior->linhas[idSuperior].palavras[j] = 0;
+}
+static void promover_para_L1(UCM *ucm, int endBloco, Cache *origem, int idOrig) {
+    int idL1 = encontrarLRU(ucm->L1, endBloco);
+    if (ucm->L1->linhas[idL1].endBloco != -1) {
+        descerBloco(ucm->L1, idL1, ucm->L2, ucm->L3, ucm->ram, &ucm->relogio);
+    }
+
+    ucm->L1->linhas[idL1] = origem->linhas[idOrig];
+    ucm->L1->linhas[idL1].contador = ucm->relogio++;
+
+// invalida na origem - politica de exclusividade
+    origem->linhas[idOrig].endBloco = -1;
+    origem->linhas[idOrig].atualizado = 0;
+    for (int j = 0; j < 4; j++) origem->linhas[idOrig].palavras[j] = 0;
 }
 
 void inicializarUCM(UCM *ucm, Cache *L1, Cache *L2, Cache *L3, Ram *ram){
@@ -76,55 +77,68 @@ BlocoMemoria* ucm_ler(UCM *ucm, Endereco end){
         return &ucm->L1->linhas[id];
     }
     ucm->missesL1++;
-//tenta na l2
+// Tenta L2 
     id = buscarNaCache(ucm->L2, endBloco);
-    if(id != -1){
+    if (id != -1) {
         ucm->hitsL2++;
-        atualizarLRU(ucm->L2,id, &ucm->relogio);
-        ucm->tempoTotal+=10;
-        //sobe para de l2 para l1 - invalidando em l2
-        subirBloco(ucm->L1, endBloco, ucm->L2, id, ucm->ram, &ucm->relogio);
-        // busca em l1 e pega o indica
-        int idl1 = buscarNaCache( ucm->L1, endBloco);
-        return &ucm->L1->linhas[idl1];
+        atualizarLRU(ucm->L2, id, &ucm->relogio);
+        ucm->tempoTotal += 10;
+    // Promove de L2 para L1, invalidando em L2
+        promover_para_L1(ucm, endBloco, ucm->L2, id);
+        int idL1 = buscarNaCache(ucm->L1, endBloco);
+        
+        return &ucm->L1->linhas[idL1];
     }
     ucm->missesL2++;
-// tenta na l3
+//Tenta L3
     id = buscarNaCache(ucm->L3, endBloco);
-    if(id != -1){
+    if (id != -1) {
         ucm->hitsL3++;
-        atualizarLRU(ucm->L3,id, &ucm->relogio);
-        ucm->tempoTotal+=50;
-        //sobe para de l3 para l2 - invalidando em l3
-        subirBloco(ucm->L2, endBloco, ucm->L3, id, ucm->ram, &ucm->relogio);
-        // busca em l2 e pega o indice
-        int idl2 = buscarNaCache( ucm->L2, endBloco);
-        //sobe para de l2 para l1 - invalidando em l2
-        subirBloco(ucm->L1, endBloco, ucm->L2, id, ucm->ram, &ucm->relogio);
-        // busca em l1 e pega o indica
-        int idl1 = buscarNaCache( ucm->L1, endBloco);
-        return &ucm->L1->linhas[idl1];
+        atualizarLRU(ucm->L3, id, &ucm->relogio);
+        ucm->tempoTotal += 50;
+// Move de L3 para L2 
+        int idL2 = encontrarLRU(ucm->L2, endBloco);
+        if (ucm->L2->linhas[idL2].endBloco != -1) {
+    // Desce o bloco removido de L2 para L3 (cascata, próximo = NULL porque L3 é o último)
+        descerBloco(ucm->L2, idL2, ucm->L3, NULL, ucm->ram, &ucm->relogio);
+    }
+// Copia o bloco de L3 para L2
+        ucm->L2->linhas[idL2] = ucm->L3->linhas[id];
+        ucm->L2->linhas[idL2].contador = ucm->relogio++;
+        ucm->L2->linhas[idL2].atualizado = 0;
+
+// Invalida em L3
+        ucm->L3->linhas[id].endBloco = -1;
+        ucm->L3->linhas[id].atualizado = 0;
+        for (int j = 0; j < 4; j++) ucm->L3->linhas[id].palavras[j] = 0;
+
+// promove de l2 para l1
+        int idL2novo = buscarNaCache(ucm->L2, endBloco);
+        promover_para_L1(ucm, endBloco, ucm->L2, idL2novo);
+//retorna info de l1
+        int idL1 = buscarNaCache(ucm->L1, endBloco);
+        return &ucm->L1->linhas[idL1];
     }
     ucm->missesL3++;
-//nao achou em nenhuma, busca na RAM
-    ucm->tempoTotal +=200;
+
+// Miss em todos: busca na RAM
+    ucm->tempoTotal += 200;
     BlocoMemoria blocoRAM = getBloco(ucm->ram, endBloco);
     blocoRAM.atualizado = 0;
-//coloca o bloco diretamente em L1
-    int idl1 = encontrarLRU(ucm->L1, endBloco);
-//se a linha em l1 estiver suja, desce p l2
-    if(ucm->L1->linhas[idl1].atualizado && ucm->L1->linhas[idl1].endBloco != -1){
-        descerBloco(ucm->L1, idl1, ucm->L2, ucm->ram, &ucm->relogio);
-// se nao estava sujo, mas estava ocupado, somente esvazia a linha
-    } else if(ucm->L1->linhas[idl1].endBloco != -1){
-        ucm->L1->linhas[idl1].endBloco = -1;
-    }
-// coloca o bloco da RAM em l1
-    ucm->L1->linhas[idl1] = blocoRAM;
-    ucm->L1->linhas[idl1].contador = ucm->relogio++;
-    ucm->L1->linhas[idl1].atualizado = 0;
 
-    return &ucm->L1->linhas[idl1];
+// Coloca em L1 (substituindo LRU em L1)
+    int idL1 = encontrarLRU(ucm->L1, endBloco);
+    // Se a linha em L1 estiver ocupada, desce para L2 
+    if (ucm->L1->linhas[idL1].endBloco != -1) {
+        // Desce para L2
+        descerBloco(ucm->L1, idL1, ucm->L2, ucm->L3, ucm->ram, &ucm->relogio);
+    }
+    // Coloca o bloco da RAM em L1
+    ucm->L1->linhas[idL1] = blocoRAM;
+    ucm->L1->linhas[idL1].contador = ucm->relogio++;
+    ucm->L1->linhas[idL1].atualizado = 0;
+
+    return &ucm->L1->linhas[idL1];
 }
 
 void ucm_escrever(UCM *ucm, Endereco end, int valor){

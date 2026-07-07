@@ -5,22 +5,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-struct CPU{
-    BlocoMemoria* registrador1;
-    BlocoMemoria* registrador2;
-    BlocoMemoria* registrador3;
-
-    int PC; // program counter
-    int opcode;
-    Instrucao *programa;
-
-    UCM *ucm; // unidade de controle de memoria
-};
-
-void setUCM(CPU* cpu, UCM *ucm){
-    cpu->ucm = ucm;
-}
-
 CPU* alocaCPU(){
     CPU *cpu = (CPU*) malloc(sizeof(CPU));
     cpu->registrador1 = NULL;

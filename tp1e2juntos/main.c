@@ -5,46 +5,75 @@
 #include "CPU.h"
 #include "Instrucao.h"
 #include "UCM.h"
-#include "cache.h"
 
 Instrucao* lerArquivoInstrucoes(char *nomeArquivo, int *qtdInstrucoes);
 
-int main(){
+int main(int argc, char *argv[]) {
+    // Parâmetros padrão
+    int tamL1 = 16;
+    int tamL2 = 64;
+    int tamL3 = 256;
+    int viasL2 = 4;
+    int viasL3 = 8;
+    char *instFile = "instructions2.txt";
+
+    // Se receber argumentos: ./tp2 <tamL1> <tamL2> <tamL3> [arquivo_instrucoes]
+    if (argc >= 4) {
+        tamL1 = atoi(argv[1]);
+        tamL2 = atoi(argv[2]);
+        tamL3 = atoi(argv[3]);
+        if (argc >= 5) instFile = argv[4];
+    }
+
+    srand(time(NULL));
+
     // Cria RAM
     Ram *ram = alocarEstruturaRam();
-    int tamanhoRAM = 1000;
-    criarRamAleat(ram, tamanhoRAM);
+    criarRamAleat(ram, 1000);
 
-    // Definição das caches
-    int tamL1 = 16;          // ex: 16 vias, 1 conjunto
-    int tamL2 = 64;          // ex: 4 vias, 16 conjuntos
-    int tamL3 = 256;         // ex: 8 vias, 32 conjuntos
-
+    // Inicializa caches
     Cache L1, L2, L3;
-    inicializarCache(&L1, 1, tamL1);                // L1: 1 via
-    inicializarCache(&L2, tamL2 / 4, 4);            // L2: 4 vias
-    inicializarCache(&L3, tamL3 / 8, 8);            // L3: 8 vias
+    inicializarCache(&L1, 1, tamL1);                // L1 totalmente associativa
+    inicializarCache(&L2, tamL2 / viasL2, viasL2);  // L2 set-associativa
+    inicializarCache(&L3, tamL3 / viasL3, viasL3);  // L3 set-associativa
 
-    // Inicializa UCM
+    // UCM
     UCM ucm;
     inicializarUCM(&ucm, &L1, &L2, &L3, ram);
 
     // Lê instruções
     int qtInstrucoes;
-    Instrucao *programa = lerArquivoInstrucoes("instructions2.txt", &qtInstrucoes);
+    Instrucao *programa = lerArquivoInstrucoes(instFile, &qtInstrucoes);
 
-    // Cria CPU e associa programa e UCM
+    // CPU
     CPU *cpu = alocaCPU();
     setPrograma(cpu, programa);
-    setUCM(cpu, &ucm);
+    cpu->ucm = &ucm;
 
-    printf("CPU INICIANDO...\n\n");
     iniciarCPU(cpu);
 
-    // Imprime estatísticas
+    // Imprime estatísticas no formato parseável
+    int total = ucm.hitsL1 + ucm.missesL1 + ucm.hitsL2 + ucm.missesL2 + ucm.hitsL3 + ucm.missesL3 + 1; // +1 para evitar divisão por zero
+    // Mas vamos usar totais por nível
+    int totL1 = ucm.hitsL1 + ucm.missesL1;
+    int totL2 = ucm.hitsL2 + ucm.missesL2;
+    int totL3 = ucm.hitsL3 + ucm.missesL3;
+    // Acesso à RAM quando miss em L3
+    int ramAcessos = ucm.missesL3; // cada miss em L3 gera um acesso à RAM
+    // Total de acessos = totL1 (ou totL2, tanto faz, pois todos os acessos passam por L1)
+    int totalAcessos = totL1;
+
+    // Formato: HIT_STATS:l1_hits,l1_misses,l2_hits,l2_misses,l3_hits,l3_misses,ram_acessos,total_acessos
+    printf("HIT_STATS:%d,%d,%d,%d,%d,%d,%d,%d\n",
+           ucm.hitsL1, ucm.missesL1,
+           ucm.hitsL2, ucm.missesL2,
+           ucm.hitsL3, ucm.missesL3,
+           ramAcessos, totalAcessos);
+
+    // Também imprime a tabela bonita (opcional)
     imprimirEstatisticas(&ucm);
 
-    // Libera memória
+    // Libera
     free(programa);
     liberarRam(ram);
     free(ram);

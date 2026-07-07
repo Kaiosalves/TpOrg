@@ -3,22 +3,28 @@
 
 #include "Instrucao.h"
 #include "UCM.h"
+#include "BlocoMemoria.h"
 
+typedef struct CPU {
+    BlocoMemoria* registrador1;
+    BlocoMemoria* registrador2;
+    BlocoMemoria* registrador3;
+    int PC;
+    int opcode;
+    Instrucao *programa;
+    UCM *ucm;
+} CPU;
 
-typedef struct CPU CPU;
-//Aloca a CPU e registradores
+// Aloca a CPU
 CPU* alocaCPU();
 
-//seta um vetor de instrucoes auxiliares
+// Seta o programa
 void setPrograma(CPU* cpu, Instrucao* programaAux);
 
-void setUCM(CPU* cpu, UCM *ucm);
-
-//inicia a a CPU
+// Inicia a CPU
 void iniciarCPU(CPU* cpu);
 
-//liberar memoria
+// Libera a CPU
 void liberaCPU(CPU* cpu);
-
 
 #endif
