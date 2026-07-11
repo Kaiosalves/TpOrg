@@ -7,7 +7,6 @@ typedef struct {
     int atualizado;
     int custo;
     int cacheHit;
-
     int contador;    // para implementar algoritmo LRU de retirada
 } BlocoMemoria;
 

@@ -17,7 +17,6 @@ int main(int argc, char *argv[]) {
     int viasL3 = 8;
     char *instFile = "instructions2.txt";
 
-    // Se receber argumentos: ./tp2 <tamL1> <tamL2> <tamL3> [arquivo_instrucoes]
     if (argc >= 4) {
         tamL1 = atoi(argv[1]);
         tamL2 = atoi(argv[2]);

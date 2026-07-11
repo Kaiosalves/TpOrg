@@ -6,7 +6,7 @@
 
 #define N_INST 10000
 #define N_MEM 1000
-#define N_OPCODE 4
+#define N_OPCODE 2
 #define N_WORD 4
 
 int main(int argc, char *argv[]) {

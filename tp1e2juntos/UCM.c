@@ -12,7 +12,7 @@ static void descerBloco(Cache *superior, int idSuperior, Cache *inferior, Cache 
     
     // Se a linha no inferior estiver ocupada, desce para o próximo nível
     if (inferior->linhas[idInf].endBloco != -1) {
-        if (proximo != NULL) {
+        if (proximo != NULL) {// se esta na l2
             // cascata para o próximo nível
             descerBloco(inferior, idInf, proximo, NULL, ram, relogio);
         } else {
@@ -35,6 +35,9 @@ static void descerBloco(Cache *superior, int idSuperior, Cache *inferior, Cache 
     superior->linhas[idSuperior].atualizado = 0;
     for (int j = 0; j < 4; j++) superior->linhas[idSuperior].palavras[j] = 0;
 }
+
+
+
 static void promover_para_L1(UCM *ucm, int endBloco, Cache *origem, int idOrig) {
     int idL1 = encontrarLRU(ucm->L1, endBloco);
     if (ucm->L1->linhas[idL1].endBloco != -1) {
@@ -50,6 +53,8 @@ static void promover_para_L1(UCM *ucm, int endBloco, Cache *origem, int idOrig) 
     for (int j = 0; j < 4; j++) origem->linhas[idOrig].palavras[j] = 0;
 }
 
+
+
 void inicializarUCM(UCM *ucm, Cache *L1, Cache *L2, Cache *L3, Ram *ram){
     ucm->L1 = L1;
     ucm->L2 = L2;
@@ -62,6 +67,9 @@ void inicializarUCM(UCM *ucm, Cache *L1, Cache *L2, Cache *L3, Ram *ram){
     ucm->hitsL3 = ucm->missesL3 = 0;
     ucm->tempoTotal = 0;
 }
+
+
+
 
 
 BlocoMemoria* ucm_ler(UCM *ucm, Endereco end){
@@ -126,20 +134,45 @@ BlocoMemoria* ucm_ler(UCM *ucm, Endereco end){
     BlocoMemoria blocoRAM = getBloco(ucm->ram, endBloco);
     blocoRAM.atualizado = 0;
 
-// Coloca em L1 (substituindo LRU em L1)
-    int idL1 = encontrarLRU(ucm->L1, endBloco);
-    // Se a linha em L1 estiver ocupada, desce para L2 
-    if (ucm->L1->linhas[idL1].endBloco != -1) {
-        // Desce para L2
-        descerBloco(ucm->L1, idL1, ucm->L2, ucm->L3, ucm->ram, &ucm->relogio);
+    
+    
+// PASSO 1: Coloca o bloco da RAM na L3 (substituindo LRU)
+    int idL3 = encontrarLRU(ucm->L3, endBloco);
+// Se a linha em L3 estiver ocupada, trata write-back
+    if (ucm->L3->linhas[idL3].atualizado && ucm->L3->linhas[idL3].endBloco != -1) {
+        setBloco(ucm->ram, ucm->L3->linhas[idL3].endBloco, ucm->L3->linhas[idL3]);
     }
-    // Coloca o bloco da RAM em L1
-    ucm->L1->linhas[idL1] = blocoRAM;
-    ucm->L1->linhas[idL1].contador = ucm->relogio++;
-    ucm->L1->linhas[idL1].atualizado = 0;
+    ucm->L3->linhas[idL3] = blocoRAM;
+    ucm->L3->linhas[idL3].contador = ucm->relogio++;
+    ucm->L3->linhas[idL3].atualizado = 0;
 
+
+// PASSO 2: Sobe da L3 para a L2 (exclusividade: invalida L3)
+    int idL2 = encontrarLRU(ucm->L2, endBloco);
+// Se a linha em L2 estiver ocupada, desce para L3 (cascata)
+    if (ucm->L2->linhas[idL2].endBloco != -1) {
+        descerBloco(ucm->L2, idL2, ucm->L3, NULL, ucm->ram, &ucm->relogio);
+    }
+// Copia o bloco da L3 para L2
+    ucm->L2->linhas[idL2] = ucm->L3->linhas[idL3];
+    ucm->L2->linhas[idL2].contador = ucm->relogio++;
+    ucm->L2->linhas[idL2].atualizado = 0;
+
+// Invalida na L3 (exclusividade)
+    ucm->L3->linhas[idL3].endBloco = -1;
+    ucm->L3->linhas[idL3].atualizado = 0;
+    for (int j = 0; j < 4; j++) ucm->L3->linhas[idL3].palavras[j] = 0;
+
+//Sobe da L2 para a L1
+
+    promover_para_L1(ucm, endBloco, ucm->L2, idL2);
+// Retorna o bloco que agora está em L1
+    int idL1 = buscarNaCache(ucm->L1, endBloco);
     return &ucm->L1->linhas[idL1];
 }
+
+
+
 
 void ucm_escrever(UCM *ucm, Endereco end, int valor){
     int bloco = end.endBloco;
@@ -165,7 +198,7 @@ void ucm_escrever(UCM *ucm, Endereco end, int valor){
         ucm->L1->linhas[idl1].palavras[offset] = valor;
         ucm->L1->linhas[idl1].atualizado = 1;
     } else {
-    // Caso extremo: escreve direto na RAM
+    // Caso extremo: escreve direto na RAM -- sistema de fallback
         BlocoMemoria blocoRAM = getBloco(ucm->ram, bloco);
         blocoRAM.palavras[offset] = valor;
         blocoRAM.atualizado = 1;
@@ -175,7 +208,7 @@ void ucm_escrever(UCM *ucm, Endereco end, int valor){
 }
 
 void imprimirEstatisticas(UCM *ucm){
-printf("\n========== ESTATÍSTICAS DA UCM ==========\n");
+printf("\n---------- ESTATÍSTICAS DA UCM -----------\n");
     int totalL1 = ucm->hitsL1 + ucm->missesL1;
     int totalL2 = ucm->hitsL2 + ucm->missesL2;
     int totalL3 = ucm->hitsL3 + ucm->missesL3;
@@ -189,7 +222,7 @@ printf("\n========== ESTATÍSTICAS DA UCM ==========\n");
            ucm->hitsL3, ucm->missesL3,
            totalL3 ? (100.0 * ucm->hitsL3 / totalL3) : 0.0);
     printf("Tempo total estimado: %lld ciclos\n", ucm->tempoTotal);
-    printf("===========================================\n");
+
 }
 
 
