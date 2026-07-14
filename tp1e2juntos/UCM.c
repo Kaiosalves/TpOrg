@@ -136,7 +136,7 @@ BlocoMemoria* ucm_ler(UCM *ucm, Endereco end){
 
     
     
-/Coloca o bloco da RAM na L3 (substituindo LRU)
+//Coloca o bloco da RAM na L3 (substituindo LRU)
     int idL3 = encontrarLRU(ucm->L3, endBloco);
 // Se a linha em L3 estiver ocupada, trata write-back
     if (ucm->L3->linhas[idL3].atualizado && ucm->L3->linhas[idL3].endBloco != -1) {
