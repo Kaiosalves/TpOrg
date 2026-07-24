@@ -136,7 +136,7 @@ BlocoMemoria* ucm_ler(UCM *ucm, Endereco end){
 
     
     
-// PASSO 1: Coloca o bloco da RAM na L3 (substituindo LRU)
+//Coloca o bloco da RAM na L3 (substituindo LRU)
     int idL3 = encontrarLRU(ucm->L3, endBloco);
 // Se a linha em L3 estiver ocupada, trata write-back
     if (ucm->L3->linhas[idL3].atualizado && ucm->L3->linhas[idL3].endBloco != -1) {
@@ -147,7 +147,7 @@ BlocoMemoria* ucm_ler(UCM *ucm, Endereco end){
     ucm->L3->linhas[idL3].atualizado = 0;
 
 
-// PASSO 2: Sobe da L3 para a L2 (exclusividade: invalida L3)
+//Sobe da L3 para a L2 (exclusividade: invalida L3)
     int idL2 = encontrarLRU(ucm->L2, endBloco);
 // Se a linha em L2 estiver ocupada, desce para L3 (cascata)
     if (ucm->L2->linhas[idL2].endBloco != -1) {
