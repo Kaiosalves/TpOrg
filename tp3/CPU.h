@@ -5,7 +5,7 @@
 #include "UCM.h"
 #include "Programa.h"
 
-#define PROB_INTERRUPCAO 5   // probabilidad de acontecer uma interrupcao
+#define PROB_INTERRUPCAO 0.5  // probabilidad de acontecer uma interrupcao
 
 typedef struct CPU {
     Programa *programa; //programa principal

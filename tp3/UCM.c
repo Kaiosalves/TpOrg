@@ -40,7 +40,7 @@ static void descerBloco(Cache *superior, int idSuperior, Cache *inferior, Cache 
     // Invalida o bloco no superior (exclusividade)
     superior->linhas[idSuperior].endBloco = -1;
     superior->linhas[idSuperior].atualizado = 0;
-    memset(inferior->linhas[idInf].palavras, 0, sizeof(int)*4);
+    memset(superior->linhas[idSuperior].palavras, 0, sizeof(int)*4);
 }
 
 

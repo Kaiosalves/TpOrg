@@ -10,8 +10,8 @@
 #define N_WORD 4
 
 int main(int argc, char *argv[]) {
-    int N_PROB = 50;
-    int N_FOR = 5;
+    int N_PROB = 60;
+    int N_FOR =30;
     if (argc >= 3) {
         N_PROB = atoi(argv[1]);
         N_FOR = atoi(argv[2]);
